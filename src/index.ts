@@ -1,4 +1,5 @@
 import { fastify } from 'fastify';
+import { CONFIG } from './config';
 
 const server = fastify({
   logger: true,
@@ -11,7 +12,7 @@ const server = fastify({
 import jwt from '@fastify/jwt';
 
 server.register(jwt, {
-  secret: 'supersecret',
+  secret: CONFIG.JWT_SECRET,
 });
 
 /***************************\
@@ -20,17 +21,18 @@ server.register(jwt, {
 
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import mongoose from 'mongoose';
 import { ROUTES } from './routes';
 
 server.register(swagger, {
   openapi: {
     info: {
-      title: 'Fastify API',
+      title: 'Devman API',
       version: '0.1.0',
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: `http://localhost:${CONFIG.PORT}`,
         description: 'Development server',
       },
     ],
@@ -95,11 +97,17 @@ server.register((app, _opt, done) => {
 \***************************/
 
 const start = async () => {
+  console.log('Connecting to mongo...');
+  await mongoose.connect(
+    `mongodb://${CONFIG.MONGO.USER}:${CONFIG.MONGO.PASSWORD}@${CONFIG.MONGO.HOST}:${CONFIG.MONGO.PORT}`
+  );
+  console.log('Connected to mongo');
+
   try {
-    await server.listen({ port: 3000, host: '0.0.0.0' });
+    await server.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
     await server.ready();
     server.swagger();
-    console.log('Server is running on port 3000');
+    console.log(`Server is running on port ${CONFIG.PORT}`);
   } catch (err) {
     console.error('Error starting server:', err);
     process.exit(1);
