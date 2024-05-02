@@ -1,6 +1,6 @@
 import { FastifySchema } from 'fastify';
 
-export const rootSchemas = {
+export const rootSchemas: { [schema: string]: FastifySchema } = {
   hello: {
     querystring: {
       type: 'object',
@@ -17,4 +17,4 @@ export const rootSchemas = {
       },
     },
   },
-} as { [schema: string]: FastifySchema };
+};

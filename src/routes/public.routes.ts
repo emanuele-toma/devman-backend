@@ -1,6 +1,7 @@
 import { FastifySchema, HTTPMethods, RouteHandlerMethod } from 'fastify';
+import { authControllers } from '../controllers/auth';
 import { rootControllers } from '../controllers/root';
-import { rootSchemas } from '../schemas';
+import { authSchemas, rootSchemas } from '../schemas';
 
 export const PUBLIC = {
   root: {
@@ -9,6 +10,20 @@ export const PUBLIC = {
       method: 'GET',
       schema: rootSchemas.hello,
       controller: rootControllers.hello,
+    },
+  },
+  auth: {
+    login: {
+      path: '/login',
+      method: 'POST',
+      schema: authSchemas.login,
+      controller: authControllers.login,
+    },
+    register: {
+      path: '/register',
+      method: 'POST',
+      schema: authSchemas.register,
+      controller: authControllers.register,
     },
   },
 } as { [route: string]: { [action: string]: Route } };

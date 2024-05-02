@@ -1,7 +1,7 @@
 import { fastify } from 'fastify';
 import { CONFIG } from './config';
 
-const server = fastify({
+export const server = fastify({
   logger: true,
 });
 
@@ -13,6 +13,9 @@ import jwt from '@fastify/jwt';
 
 server.register(jwt, {
   secret: CONFIG.JWT_SECRET,
+  sign: {
+    expiresIn: '30d',
+  },
 });
 
 /***************************\
@@ -22,7 +25,9 @@ server.register(jwt, {
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import mongoose from 'mongoose';
+import { UserModel } from './models';
 import { ROUTES } from './routes';
+import { JWTUser } from './types';
 
 server.register(swagger, {
   openapi: {
@@ -71,10 +76,22 @@ server.register((app, _opt, done) => {
 
 server.register((app, _opt, done) => {
   app.addHook('onRequest', async (req, res) => {
+    let authorized = true;
+
     try {
       await req.jwtVerify();
     } catch (err) {
       res.status(401).send({ error: 'Unauthorized' });
+      authorized = false;
+    }
+
+    if (!authorized) return;
+
+    const { id } = req.user as JWTUser;
+    const user = await UserModel.findById(id);
+
+    if (!user?.active) {
+      return res.status(401).send({ error: 'Unauthorized', message: 'User is not active' });
     }
   });
 
@@ -83,7 +100,7 @@ server.register((app, _opt, done) => {
       app.route({
         url: path,
         method,
-        schema,
+        schema: { ...schema, security: [{ bearerAuth: [] }] },
         handler: controller,
       });
     });
